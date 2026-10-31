@@ -4,6 +4,7 @@ import {
   annualReview,
   avatar,
   badges,
+  bannerCover,
   booklists,
   books,
   categories,
@@ -124,9 +125,9 @@ function str(value: unknown) {
 function discover() {
   return {
     banners: [
-      { id: 1, title: '秋日共读计划', imageUrl: cover('秋日共读', 30), linkType: 'none', linkValue: '' },
-      { id: 2, title: '年度会员限时 5 折', imageUrl: cover('年度会员', 200), linkType: 'web', linkValue: '#/membership' },
-      { id: 3, title: '本周新书 · 时间简史', imageUrl: cover('新书上架', 260), linkType: 'book', linkValue: '19' },
+      { id: 1, title: '秋日共读计划', imageUrl: bannerCover('秋日共读', 30), linkType: 'none', linkValue: '' },
+      { id: 2, title: '年度会员限时 5 折', imageUrl: bannerCover('年度会员', 200), linkType: 'web', linkValue: '#/membership' },
+      { id: 3, title: '本周新书 · 时间简史', imageUrl: bannerCover('新书上架', 260), linkType: 'book', linkValue: '19' },
     ],
     weeklyBooks: [books[0], books[4], books[9], books[16]].map((b, i) => ({
       id: i + 1,

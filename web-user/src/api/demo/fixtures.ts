@@ -8,18 +8,135 @@ import type { NotificationItem } from '../notification'
 import type { DailyDuration, SessionSummary } from '../reading'
 import type { UserInfo } from '../auth'
 
-/** 生成纯色渐变封面（不依赖外网图片，Pages 下也能正常显示） */
+/** 稳定哈希：同一书名始终得到同一套配色与构图 */
+function hashOf(text: string) {
+  let h = 7
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) % 9973
+  return h
+}
+
+const escapeXml = (text: string) =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+const COVER_FONT = "'Songti SC','Noto Serif CJK SC',SimSun,serif"
+
+/**
+ * 书籍封面（240×320，3:4）
+ * 纸感渐变底 + 抽象几何 + 竖排书名 + 书脊 / 烫金细线，全部由 SVG 生成，不依赖外网图片
+ */
 export function cover(title: string, hue: number) {
+  const seed = hashOf(title)
+  const variant = seed % 3
+  const chars = Array.from(title).slice(0, 5)
+  const size = chars.length <= 2 ? 42 : chars.length === 3 ? 34 : 28
+  const gap = Math.round(size * 1.2)
+  const startY = 168 - ((chars.length - 1) * gap) / 2
+  const accent = 'rgba(226,200,138,.9)'
+
+  const art =
+    variant === 0
+      ? `<circle cx="198" cy="72" r="88" fill="url(#glow)"/>` +
+        `<path d="M 8 300 L 128 186" stroke="rgba(255,255,255,.22)" stroke-width="1"/>` +
+        `<path d="M 8 316 L 146 186" stroke="rgba(255,255,255,.14)" stroke-width="1"/>` +
+        `<path d="M 8 284 L 112 186" stroke="rgba(255,255,255,.14)" stroke-width="1"/>`
+      : variant === 1
+        ? `<circle cx="66" cy="96" r="70" fill="url(#glow)"/>` +
+          `<rect y="216" width="240" height="104" fill="hsl(${hue + 34},32%,20%)" opacity=".55"/>` +
+          `<rect x="20" y="212" width="200" height="1" fill="${accent}"/>`
+        : `<rect width="240" height="320" fill="url(#lines)" opacity=".22"/>` +
+          `<rect x="58" y="210" width="42" height="42" fill="none" stroke="rgba(255,255,255,.34)" transform="rotate(45 79 231)"/>` +
+          `<circle cx="196" cy="84" r="80" fill="url(#glow)"/>`
+
+  const titleSvg = chars
+    .map(
+      (char, i) =>
+        `<text x="170" y="${(startY + i * gap + 1).toFixed(1)}" font-family="${COVER_FONT}" font-size="${size}" ` +
+        `text-anchor="middle" fill="rgba(16,24,22,.35)">${escapeXml(char)}</text>` +
+        `<text x="169" y="${(startY + i * gap).toFixed(1)}" font-family="${COVER_FONT}" font-size="${size}" ` +
+        `text-anchor="middle" fill="rgba(255,255,255,.95)">${escapeXml(char)}</text>`,
+    )
+    .join('')
+
   const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="320">` +
-    `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">` +
-    `<stop offset="0" stop-color="hsl(${hue},34%,64%)"/>` +
-    `<stop offset="1" stop-color="hsl(${hue + 26},30%,34%)"/>` +
-    `</linearGradient></defs>` +
-    `<rect width="240" height="320" fill="url(#g)"/>` +
-    `<rect x="18" y="18" width="204" height="284" fill="none" stroke="rgba(255,255,255,.35)"/>` +
-    `<text x="120" y="150" font-family="Songti SC,serif" font-size="26" fill="#ffffff" ` +
-    `text-anchor="middle" letter-spacing="6">${title}</text>` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="320" viewBox="0 0 240 320">` +
+    `<defs>` +
+    `<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">` +
+    `<stop offset="0" stop-color="hsl(${hue},28%,80%)"/>` +
+    `<stop offset=".52" stop-color="hsl(${hue + 12},34%,55%)"/>` +
+    `<stop offset="1" stop-color="hsl(${hue + 28},36%,28%)"/>` +
+    `</linearGradient>` +
+    `<radialGradient id="glow" cx=".5" cy=".5" r=".5">` +
+    `<stop offset="0" stop-color="#ffffff" stop-opacity=".42"/>` +
+    `<stop offset="1" stop-color="#ffffff" stop-opacity="0"/>` +
+    `</radialGradient>` +
+    `<linearGradient id="spine" x1="0" y1="0" x2="1" y2="0">` +
+    `<stop offset="0" stop-color="rgba(16,22,20,.5)"/>` +
+    `<stop offset="1" stop-color="rgba(16,22,20,0)"/>` +
+    `</linearGradient>` +
+    `<pattern id="lines" width="240" height="9" patternUnits="userSpaceOnUse">` +
+    `<rect y=".5" width="240" height=".6" fill="rgba(255,255,255,.5)"/>` +
+    `</pattern>` +
+    `<pattern id="grain" width="5" height="5" patternUnits="userSpaceOnUse">` +
+    `<circle cx="1" cy="1" r=".7" fill="rgba(255,255,255,.35)"/>` +
+    `<circle cx="4" cy="3" r=".5" fill="rgba(0,0,0,.25)"/>` +
+    `</pattern>` +
+    `</defs>` +
+    `<rect width="240" height="320" fill="url(#bg)"/>` +
+    `<rect width="240" height="320" fill="url(#grain)" opacity=".18"/>` +
+    art +
+    `<rect width="12" height="320" fill="url(#spine)"/>` +
+    `<rect x="11.4" width=".8" height="320" fill="rgba(255,255,255,.22)"/>` +
+    `<rect x="20" y="20" width="200" height="280" fill="none" stroke="rgba(255,255,255,.32)" stroke-width=".9"/>` +
+    `<rect x="134" y="${(startY - size).toFixed(1)}" width="1.2" ` +
+    `height="${(gap * (chars.length - 1) + size * 0.9).toFixed(1)}" fill="${accent}"/>` +
+    titleSvg +
+    `<text x="120" y="291" font-family="Helvetica,Arial,sans-serif" font-size="7" letter-spacing="3.2" ` +
+    `text-anchor="middle" fill="rgba(255,255,255,.55)">SHIPULSE</text>` +
+    `</svg>`
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg)
+}
+
+/**
+ * 首页横幅（1200×480）：深色书卷质感 + 抽象书脊群 + 烫金细线
+ * 文案由页面叠加，所以画面只做氛围，不再重复大字
+ */
+export function bannerCover(title: string, hue: number) {
+  const seed = hashOf(title)
+  const spines = [0, 1, 2, 3, 4]
+    .map((i) => {
+      const w = 20 + ((seed + i * 7) % 16)
+      const h = 150 + ((seed + i * 13) % 70)
+      const x = 936 + i * 36
+      const y = 150 + ((seed + i * 11) % 46)
+      const opacity = (0.08 + i * 0.02).toFixed(2)
+      return (
+        `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" ` +
+        `fill="rgba(255,255,255,${opacity})" transform="rotate(-8 ${x + w / 2} ${y + h})"/>`
+      )
+    })
+    .join('')
+
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="480" viewBox="0 0 1200 480">` +
+    `<defs>` +
+    `<linearGradient id="b" x1="0" y1="0" x2="1" y2="1">` +
+    `<stop offset="0" stop-color="hsl(${hue},30%,17%)"/>` +
+    `<stop offset=".6" stop-color="hsl(${hue + 18},34%,28%)"/>` +
+    `<stop offset="1" stop-color="hsl(${hue + 38},32%,14%)"/>` +
+    `</linearGradient>` +
+    `<radialGradient id="r" cx=".5" cy=".5" r=".5">` +
+    `<stop offset="0" stop-color="#ffffff" stop-opacity=".22"/>` +
+    `<stop offset="1" stop-color="#ffffff" stop-opacity="0"/>` +
+    `</radialGradient>` +
+    `</defs>` +
+    `<rect width="1200" height="480" fill="url(#b)"/>` +
+    `<circle cx="1020" cy="150" r="230" fill="url(#r)"/>` +
+    `<circle cx="1020" cy="150" r="188" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="1.2"/>` +
+    `<circle cx="1020" cy="150" r="126" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="1"/>` +
+    spines +
+    `<rect x="64" y="76" width="210" height="1" fill="rgba(226,200,138,.55)"/>` +
+    `<text x="64" y="62" font-family="Helvetica,Arial,sans-serif" font-size="16" letter-spacing="6" ` +
+    `fill="rgba(255,255,255,.5)">SHIPULSE READING CLUB</text>` +
     `</svg>`
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg)
 }
