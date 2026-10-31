@@ -1,0 +1,15 @@
+{
+  "name": "shipulse",
+  "private": true,
+  "version": "0.1.0",
+  "description": "时脉书社-阅读世界 monorepo（web-user / web-admin / miniprogram / backend）",
+  "scripts": {
+    "dev:backend": "npm --prefix backend run start:dev",
+    "dev:web-user": "npm --prefix web-user run dev",
+    "dev:web-admin": "npm --prefix web-admin run dev",
+    "build:backend": "npm --prefix backend run build",
+    "build:web-user": "npm --prefix web-user run build",
+    "build:web-admin": "npm --prefix web-admin run build",
+    "check:miniprogram": "node scripts/check-miniprogram.js"
+  }
+}

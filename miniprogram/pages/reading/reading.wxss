@@ -1,0 +1,53 @@
+.cover-sm {
+  width: 96rpx;
+  height: 128rpx;
+  border-radius: 6rpx;
+  background: #f0f1f0;
+  flex-shrink: 0;
+}
+
+.timer-card {
+  text-align: center;
+  padding: 64rpx 28rpx;
+}
+
+.timer-num {
+  font-size: 104rpx;
+  font-weight: 500;
+  color: #1b1f1d;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.timer-hint {
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #8a918d;
+}
+
+.page-input {
+  width: 220rpx;
+  height: 80rpx;
+  text-align: right;
+  border-bottom: 1rpx solid #e6e9e6;
+  font-size: 30rpx;
+  color: #1b1f1d;
+}
+
+.note-input {
+  width: 100%;
+  min-height: 150rpx;
+  margin-top: 12rpx;
+  padding: 20rpx;
+  box-sizing: border-box;
+  background: #f2f3f2;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #1b1f1d;
+}
+
+.stat {
+  text-align: center;
+  flex: 1;
+}

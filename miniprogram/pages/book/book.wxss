@@ -1,0 +1,41 @@
+.cover-lg {
+  width: 196rpx;
+  height: 264rpx;
+  border-radius: 8rpx;
+  background: #f0f1f0;
+  flex-shrink: 0;
+}
+
+.stat {
+  text-align: center;
+  flex: 1;
+}
+
+.shelf-row {
+  display: flex;
+  margin-top: 24rpx;
+}
+
+.shelf-chip {
+  flex: 1;
+  justify-content: center;
+  text-align: center;
+  height: 76rpx;
+  line-height: 76rpx;
+  padding: 0 12rpx;
+  margin-right: 12rpx;
+}
+
+.shelf-chip:last-child {
+  margin-right: 0;
+}
+
+.desc {
+  white-space: pre-wrap;
+  line-height: 1.85;
+  color: #3f4744;
+}
+
+.web-guide {
+  background: #eef2ef;
+}

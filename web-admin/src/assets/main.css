@@ -1,0 +1,37 @@
+:root {
+  /* 品牌主色 pine-deep 定制 Element Plus 变量（替代默认蓝色 #409EFF） */
+  --el-color-primary: #2d4a43;
+  --el-color-primary-light-3: #5c7468;
+  --el-color-primary-light-5: #84968d;
+  --el-color-primary-light-7: #adb9b3;
+  --el-color-primary-light-8: #c1cac5;
+  --el-color-primary-light-9: #d6dcd9;
+  --el-color-primary-dark-2: #243b35;
+
+  /* 辅助色 */
+  --el-color-success: #5f8d6d;
+  --el-color-warning: #c8a24f;
+  --el-color-danger: #c0503f;
+
+  /* 边框 / 背景 */
+  --el-border-color: #c1cac5;
+  --el-border-color-light: #d6dcd9;
+  --el-border-color-lighter: #e3e7e5;
+  --el-fill-color-light: #f2f5f3;
+
+  /* 文本 */
+  --el-text-color-primary: #22312d;
+  --el-text-color-regular: #4a5753;
+
+  /* 字体 */
+  --el-font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  background-color: #f4f6f4;
+  color: var(--el-text-color-primary);
+}

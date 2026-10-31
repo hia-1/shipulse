@@ -1,0 +1,95 @@
+# 时脉书社-阅读世界 · Docker Compose 编排
+# 用法：
+#   开发联调：docker compose up -d mysql redis   （本机直跑前后端，连容器内 MySQL/Redis）
+#   全量部署：docker compose --env-file .env.prod up -d --build
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: shipulse-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-change_me_root}
+      MYSQL_DATABASE: ${DB_NAME:-shipulse}
+      MYSQL_USER: ${DB_USER:-shipulse}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-change_me}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    ports:
+      # 仅绑定回环地址：本机开发可连，避免 MySQL 直接暴露到公网
+      - '127.0.0.1:3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # P0-03 产出的初始化脚本挂载到首次启动目录
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-uroot', '-p${DB_ROOT_PASSWORD:-change_me_root}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: shipulse-redis
+    restart: unless-stopped
+    ports:
+      # 仅绑定回环地址：本机开发可连，避免无认证 Redis 直接暴露到公网
+      - '127.0.0.1:6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    # CI/CD 可传入预构建镜像（BACKEND_IMAGE）；本地开发缺省回退为本地构建
+    image: ${BACKEND_IMAGE:-shipulse-backend:local}
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: shipulse-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-prod}
+      APP_PORT: 3000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-shipulse}
+      DB_PASSWORD: ${DB_PASSWORD:-change_me}
+      DB_NAME: ${DB_NAME:-shipulse}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-change_me}
+      JWT_ACCESS_EXPIRES: ${JWT_ACCESS_EXPIRES:-2h}
+      JWT_REFRESH_EXPIRES: ${JWT_REFRESH_EXPIRES:-30d}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    expose:
+      - '3000'
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: shipulse-nginx
+    restart: unless-stopped
+    ports:
+      - '${NGINX_HTTP_PORT:-8080}:80'
+      - '${NGINX_ADMIN_PORT:-8081}:81'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      # 前端构建产物挂载（先执行 build:web-user / build:web-admin）
+      - ./web-user/dist:/usr/share/nginx/html/user:ro
+      - ./web-admin/dist:/usr/share/nginx/html/admin:ro
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
+  redis_data:

@@ -1,0 +1,57 @@
+/* 消息页：分类 Tab + 列表 */
+.msg-tabs {
+  display: flex;
+  margin-bottom: 4rpx;
+}
+.msg-tab {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx 0 24rpx;
+  font-size: 28rpx;
+  color: #8a918d;
+  position: relative;
+}
+.msg-tab-active {
+  color: #1b1f1d;
+  font-weight: 600;
+}
+.msg-tab-active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 8rpx;
+  transform: translateX(-50%);
+  width: 28rpx;
+  height: 4rpx;
+  border-radius: 2rpx;
+  background: #2c4a42;
+}
+.msg-tab-badge {
+  display: inline-block;
+  min-width: 30rpx;
+  height: 30rpx;
+  line-height: 30rpx;
+  padding: 0 8rpx;
+  margin-left: 6rpx;
+  border-radius: 999rpx;
+  background: #2c4a42;
+  color: #ffffff;
+  font-size: 20rpx;
+  font-weight: 500;
+}
+.msg-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 24rpx 0;
+}
+.msg-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: #2c4a42;
+  margin: 16rpx 16rpx 0 0;
+  flex-shrink: 0;
+}
+.msg-dot-read {
+  background: #e2e5e3;
+}

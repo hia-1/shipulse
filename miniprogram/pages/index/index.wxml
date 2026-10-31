@@ -1,0 +1,132 @@
+<view class="page">
+  <!-- 品牌头 -->
+  <view class="hero">
+    <view class="title-lg serif">时脉书社</view>
+    <view class="text-muted text-sm">记录每一次阅读的脉动</view>
+  </view>
+
+  <!-- 登录卡 -->
+  <view wx:if="{{!user}}" class="card">
+    <view class="title-sm">微信一键登录</view>
+    <view class="text-muted text-sm" style="margin-top: 8rpx">
+      授权手机号后与 Web 端账号自动合并，书架、书评与时脉记录三端同步
+    </view>
+    <button
+      class="btn btn-primary btn-block"
+      style="margin-top: 24rpx"
+      open-type="getPhoneNumber"
+      bindgetphonenumber="onGetPhoneNumber"
+      disabled="{{logging}}"
+    >
+      微信一键登录
+    </button>
+    <view
+      class="text-muted text-xs"
+      style="text-align: center; margin-top: 16rpx"
+      bindtap="onSilentLogin"
+    >
+      暂不绑定手机号，仅微信登录
+    </view>
+  </view>
+
+  <view wx:else class="card card-tight row-between">
+    <view class="row flex-1">
+      <image
+        wx:if="{{user.avatarUrl}}"
+        class="avatar"
+        src="{{user.avatarUrl}}"
+        mode="aspectFill"
+      ></image>
+      <view class="avatar avatar-fallback" wx:else>{{user.avatarText}}</view>
+      <view class="flex-1" style="margin-left: 16rpx">
+        <view class="title-sm">{{user.nickname}}</view>
+        <view class="text-muted text-xs">{{user.isMember ? '会员' : '书友'}}</view>
+      </view>
+    </view>
+    <view class="text-muted text-sm" bindtap="onLogout">退出</view>
+  </view>
+
+  <!-- 查书入口 -->
+  <view class="search-bar" bindtap="goSearch">
+    <text class="search-placeholder flex-1">搜索书名 / 作者 / ISBN</text>
+  </view>
+
+  <!-- 今日阅读 + 快捷打卡 -->
+  <view class="card" style="margin-top: 28rpx">
+    <view class="row-between">
+      <view>
+        <view class="title-sm">今日阅读</view>
+        <view class="stat-num" style="margin-top: 8rpx">
+          {{todayMinutes}}<text class="text-sm text-muted"> 分钟</text>
+        </view>
+      </view>
+      <view class="tag {{checkedToday ? 'tag-pine' : ''}}">
+        {{checkedToday ? '已打卡' : '未打卡'}}
+      </view>
+    </view>
+    <button
+      class="btn btn-primary btn-block"
+      style="margin-top: 24rpx"
+      bindtap="onQuickCheckin"
+      disabled="{{checking}}"
+    >
+      {{checkedToday ? '今日已打卡' : '快捷打卡'}}
+    </button>
+    <view
+      class="text-muted text-xs"
+      style="margin-top: 16rpx; text-align: center"
+      bindtap="goPulse"
+    >
+      查看时脉报告 ›
+    </view>
+  </view>
+
+  <!-- 在读进度 -->
+  <view class="row-between" style="margin: 8rpx 4rpx 16rpx">
+    <view class="title-md">在读进度</view>
+    <view class="text-muted text-sm" bindtap="goSearch">添加书籍</view>
+  </view>
+
+  <view class="card empty" wx:if="{{loading}}">加载中…</view>
+  <block wx:elif="{{readingBooks.length}}">
+    <view class="card">
+      <block wx:for="{{readingBooks}}" wx:key="bookId">
+        <view
+          class="book-item"
+          data-id="{{item.bookId}}"
+          bindtap="goBook"
+        >
+          <image
+            wx:if="{{!item.coverFailed}}"
+            class="book-cover"
+            src="{{item.book.coverUrl}}"
+            mode="aspectFill"
+            data-index="{{index}}"
+            binderror="onCoverError"
+          ></image>
+          <view wx:else class="book-cover cover-fallback">{{item.coverText}}</view>
+          <view class="book-info">
+            <view class="book-title">{{item.book.title}}</view>
+            <view class="book-sub">{{item.book.author}}</view>
+            <view class="progress" style="margin-top: 16rpx">
+              <view
+                class="progress-inner"
+                style="width: {{item.progressValue}}%"
+              ></view>
+            </view>
+            <view class="text-muted text-xs" style="margin-top: 8rpx">
+              已读 {{item.progressValue}}%
+            </view>
+          </view>
+        </view>
+        <view class="divider" wx:if="{{index < readingBooks.length - 1}}"></view>
+      </block>
+    </view>
+  </block>
+  <view class="card empty" wx:else>暂无在读书籍，去查书添加吧</view>
+
+  <view class="card empty" wx:if="{{error}}">
+    <view>{{error}}</view>
+    <view class="empty-action" bindtap="loadData">重试</view>
+  </view>
+</view>

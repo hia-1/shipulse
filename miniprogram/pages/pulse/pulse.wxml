@@ -1,0 +1,152 @@
+<view class="page">
+  <!-- 未登录 -->
+  <view class="card empty" wx:if="{{needLogin}}">
+    <view class="title-sm">登录后查看你的时脉</view>
+    <view class="text-muted text-sm" style="margin-top: 8rpx">
+      与 Web 端同账号同步阅读记录
+    </view>
+    <button class="btn btn-primary btn-block" style="margin-top: 24rpx" bindtap="goLogin">
+      去登录
+    </button>
+  </view>
+
+  <block wx:else>
+    <view class="card empty" wx:if="{{loading}}">加载中…</view>
+    <view class="card empty" wx:elif="{{error}}">
+      <view>{{error}}</view>
+      <view class="empty-action" bindtap="load">重试</view>
+    </view>
+
+    <block wx:else>
+      <!-- 今日概览 -->
+      <view class="card">
+        <view class="title-sm">今日概览</view>
+        <view class="row-between" style="margin-top: 20rpx">
+          <view class="stat">
+            <view class="stat-num">{{today.minutes}}</view>
+            <view class="stat-label">阅读分钟</view>
+          </view>
+          <view class="stat">
+            <view class="stat-num">{{today.sessionCount}}</view>
+            <view class="stat-label">阅读场次</view>
+          </view>
+          <view class="stat">
+            <view class="stat-num">{{today.bookCount}}</view>
+            <view class="stat-label">涉及书籍</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 本周概览 -->
+      <view class="card">
+        <view class="row-between">
+          <view class="title-sm">本周概览</view>
+          <view class="text-muted text-xs">
+            合计 {{week.totalMinutes}} 分钟 · 打卡 {{week.activeDays}} 天
+          </view>
+        </view>
+        <view class="week-row">
+          <view class="week-col" wx:for="{{week.days}}" wx:key="date">
+            <view class="week-bar-wrap">
+              <view
+                class="week-bar level-{{item.level}}"
+                style="height: {{item.barHeight}}%"
+              ></view>
+            </view>
+            <view class="week-label {{item.isToday ? 'week-label-today' : ''}}">
+              {{item.label}}
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 打卡日历 -->
+      <view class="card">
+        <view class="row-between">
+          <view class="cal-nav" bindtap="prevMonth">‹</view>
+          <view class="title-sm">{{calendar.title}}</view>
+          <view class="cal-nav" bindtap="nextMonth">›</view>
+        </view>
+        <view class="cal-head">
+          <view class="cal-head-cell" wx:for="{{calHead}}" wx:key="*this">{{item}}</view>
+        </view>
+        <view class="cal-row" wx:for="{{calendar.weeks}}" wx:for-item="row" wx:key="index">
+          <view class="cal-cell" wx:for="{{row}}" wx:for-item="cell" wx:key="date">
+            <view
+              class="cal-day level-{{cell.inMonth ? cell.level : 0}} {{cell.isToday ? 'cal-today' : ''}} {{cell.inMonth ? '' : 'cal-out'}}"
+            >
+              {{cell.day}}
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 分享卡片 -->
+      <view class="card">
+        <view class="row-between">
+          <view class="title-sm">分享我的时脉</view>
+          <view class="text-muted text-xs" wx:if="{{share}}">短码 {{share.code}}</view>
+        </view>
+
+        <view class="share-card" wx:if="{{share}}">
+          <view class="share-title serif">{{share.card.title}}</view>
+          <view class="share-sub text-muted text-xs">{{share.card.subtitle}}</view>
+          <view class="share-stats">
+            <view class="share-stat" wx:for="{{share.card.stats}}" wx:key="label">
+              <view class="share-stat-val">{{item.value}}</view>
+              <view class="share-stat-label">{{item.label}}</view>
+            </view>
+          </view>
+          <view class="share-footer text-faint text-xs">{{share.card.footer}}</view>
+        </view>
+
+        <button
+          class="btn btn-primary btn-block"
+          style="margin-top: {{share ? '20rpx' : '24rpx'}}"
+          bindtap="onGenerateShare"
+          disabled="{{sharing}}"
+        >
+          {{share ? '重新生成卡片' : '生成分享卡片'}}
+        </button>
+        <block wx:if="{{share}}">
+          <button class="btn btn-ghost btn-block" style="margin-top: 16rpx" open-type="share">
+            分享给微信好友
+          </button>
+          <button class="btn btn-ghost btn-block" style="margin-top: 16rpx" bindtap="onCopyLink">
+            复制 Web 链接
+          </button>
+        </block>
+      </view>
+
+      <!-- 订阅消息 -->
+      <view class="card">
+        <view class="row-between">
+          <view class="title-sm">阅读提醒</view>
+          <view class="tag {{hasAuthorized ? 'tag-pine' : ''}}">
+            {{hasAuthorized ? '已开启' : '未开启'}}
+          </view>
+        </view>
+        <view class="text-muted text-sm" style="margin-top: 8rpx">
+          授权后，微信可推送阅读与打卡提醒
+        </view>
+        <view class="sub-item" wx:for="{{templates}}" wx:key="id">
+          <view class="flex-1">
+            <view class="text-sm">{{item.title}}</view>
+            <view class="text-faint text-xs">{{item.scene}} · 剩余 {{item.remaining}} 次</view>
+          </view>
+          <view class="text-muted text-xs">{{item.authorized ? '已授权' : '未授权'}}</view>
+        </view>
+        <button class="btn btn-primary btn-block" style="margin-top: 20rpx" bindtap="onSubscribe">
+          开启阅读提醒
+        </button>
+        <view
+          class="text-faint text-xs"
+          style="margin-top: 12rpx; text-align: center"
+          wx:if="{{subscribeMock}}"
+        >
+          开发环境：订阅消息为模拟下发
+        </view>
+      </view>
+    </block>
+  </block>
+</view>

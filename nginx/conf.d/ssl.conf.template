@@ -1,0 +1,98 @@
+# ============================================================================
+# 生产 HTTPS 配置模板（P2-16 安全加固 · 全站 HTTPS）
+#
+# 启用方式：
+#   1. 将本文件复制为 nginx/conf.d/ssl.conf（去掉 .template 后缀即会被 include）
+#   2. 把证书放到 nginx/certs/：fullchain.pem（证书链）+ privkey.pem（私钥）
+#   3. 在 docker-compose.yml 的 nginx 服务补充端口与证书挂载：
+#        ports:
+#          - '80:80'      # HTTP → HTTPS 跳转
+#          - '443:443'    # 用户端
+#          - '444:444'    # 管理端
+#        volumes:
+#          - ./nginx/certs:/etc/nginx/certs:ro
+#   4. 将 user.conf / admin.conf 中的 :80 / :81 业务 server 移除（或改为仅跳转），
+#      由本文件的 :443 / :444 承接，避免明文入口残留。
+#
+# 说明：TLS 协议/套件等加固参数统一在 nginx.conf 的 http 块声明，本文件只负责
+#       server 与证书绑定，保持单一来源。
+# ============================================================================
+
+# ---- HTTP 统一跳转到 HTTPS（保留 ACME 校验路径） ----
+server {
+    listen 80;
+    server_name _;
+
+    location /.well-known/acme-challenge/ {
+        root /usr/share/nginx/html;
+    }
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# ---- 用户端 HTTPS ----
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name shipulse.example.com;   # TODO 替换为真实域名
+
+    ssl_certificate     /etc/nginx/certs/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/privkey.pem;
+
+    add_header Strict-Transport-Security 'max-age=15552000; includeSubDomains' always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    add_header Referrer-Policy no-referrer always;
+
+    root /usr/share/nginx/html/user;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    location = /health {
+        proxy_pass http://backend:3000/health;
+        proxy_set_header Host $host;
+    }
+    location /api/ {
+        proxy_pass http://backend:3000/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+# ---- 管理端 HTTPS ----
+server {
+    listen 444 ssl;
+    http2 on;
+    server_name admin.shipulse.example.com;   # TODO 替换为真实域名
+
+    ssl_certificate     /etc/nginx/certs/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/privkey.pem;
+
+    add_header Strict-Transport-Security 'max-age=15552000; includeSubDomains' always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    add_header Referrer-Policy no-referrer always;
+
+    # 管理端建议叠加 IP 白名单（按需开启）：
+    # allow 10.0.0.0/8;
+    # deny all;
+
+    root /usr/share/nginx/html/admin;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    location /api/ {
+        proxy_pass http://backend:3000/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Design Token · 双主题 CSS 变量
+   浅色：DESIGN.md colors 原值
+   深色：纸墨反转推导映射（DESIGN.md 未定义深色值，见 TOKENS.md 说明）
+   ============================================================ */
+:root {
+  /* 纸面 */
+  --c-paper-base: 251 251 250; /* #FBFBFA */
+  --c-paper-warm: 247 247 245; /* #F7F7F5 */
+  --c-paper-elevated: 255 255 255; /* #FFFFFF */
+  /* 墨色 */
+  --c-ink-primary: 26 36 33; /* #1A2421 */
+  --c-ink-secondary: 74 84 81; /* #4A5451 */
+  --c-ink-muted: 138 148 144; /* #8A9490 */
+  --c-ink-faint: 188 195 192; /* #BCC3C0 */
+  /* 松绿 */
+  --c-pine-deep: 45 74 67; /* #2D4A43 */
+  --c-pine-hover: 36 60 54; /* #243C36 */
+  --c-pine-subtle: 232 239 234; /* #E8EFEA */
+  /* 铜青金 */
+  --c-gold-patina: 194 155 56; /* #C29B38 */
+  --c-gold-tint: 249 245 236; /* #F9F5EC */
+  /* 边界 */
+  --c-border-hairline: 234 232 227; /* #EAE8E3 */
+  --c-border-muted: 224 222 215; /* #E0DED7 */
+  /* 时脉热力色阶（DESIGN.md：0 → 120+ 分钟共 5 级） */
+  --c-heat-0: 240 239 234; /* #F0EFEA */
+  --c-heat-1: 201 221 213; /* #C9DDD5 */
+  --c-heat-2: 136 168 158; /* #88A89E */
+  --c-heat-3: 45 74 67; /* #2D4A43 */
+  --c-heat-4: 29 50 45; /* #1D322D */
+  /* 语义色 */
+  --c-error: 186 26 26; /* #BA1A1A */
+  --c-error-container: 255 218 214; /* #FFDAD6 */
+  --c-on-error-container: 147 0 10; /* #93000A */
+}
+
+.dark {
+  --c-paper-base: 22 24 23;
+  --c-paper-warm: 28 31 30;
+  --c-paper-elevated: 35 39 37;
+  --c-ink-primary: 236 238 236;
+  --c-ink-secondary: 180 188 184;
+  --c-ink-muted: 126 135 131;
+  --c-ink-faint: 78 86 82;
+  --c-pine-deep: 62 101 91;
+  --c-pine-hover: 74 117 104;
+  --c-pine-subtle: 36 51 46;
+  --c-gold-patina: 212 175 84;
+  --c-gold-tint: 42 38 24;
+  --c-border-hairline: 46 51 49;
+  --c-border-muted: 56 62 59;
+  --c-heat-0: 46 51 49;
+  --c-heat-1: 52 78 70;
+  --c-heat-2: 74 117 104;
+  --c-heat-3: 110 160 145;
+  --c-heat-4: 152 202 186;
+  --c-error: 255 180 171;
+  --c-error-container: 147 0 10;
+  --c-on-error-container: 255 218 214;
+}
+
+@layer base {
+  body {
+    @apply bg-paper-base text-ink-primary font-sans antialiased;
+  }
+  /* 时脉数字：等宽数字列对齐（DESIGN.md Typography） */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ============================================================
+   工具类
+   ============================================================ */
+@layer utilities {
+  /* 隐藏滚动条（跨浏览器）：横向筛选条使用，保留可滚动能力 */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ============================================================
+   字体层级（DESIGN.md typography）
+   display/headline：Noto Serif；title/body/label：Inter
+   ============================================================ */
+@layer components {
+  .text-display-lg {
+    @apply font-serif font-semibold;
+    font-size: 40px;
+    line-height: 52px;
+    letter-spacing: -0.01em;
+  }
+  .text-display-lg-mobile {
+    @apply font-serif font-semibold;
+    font-size: 30px;
+    line-height: 40px;
+    letter-spacing: -0.01em;
+  }
+  .text-headline-lg {
+    @apply font-serif font-semibold;
+    font-size: 32px;
+    line-height: 44px;
+    letter-spacing: -0.005em;
+  }
+  .text-headline-lg-mobile {
+    @apply font-serif font-semibold;
+    font-size: 24px;
+    line-height: 34px;
+  }
+  .text-headline-md {
+    @apply font-serif font-medium;
+    font-size: 24px;
+    line-height: 34px;
+  }
+  .text-headline-sm {
+    @apply font-serif font-medium;
+    font-size: 20px;
+    line-height: 28px;
+    letter-spacing: 0.01em;
+  }
+  .text-title-lg {
+    @apply font-serif font-medium;
+    font-size: 18px;
+    line-height: 26px;
+    letter-spacing: 0.01em;
+  }
+  .text-title-md {
+    @apply font-sans font-semibold;
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: 0.005em;
+  }
+  .text-body-lg {
+    @apply font-sans;
+    font-size: 17px;
+    line-height: 30px;
+    letter-spacing: 0.01em;
+  }
+  .text-body-md {
+    @apply font-sans;
+    font-size: 15px;
+    line-height: 26px;
+    letter-spacing: 0.01em;
+  }
+  .text-body-sm {
+    @apply font-sans;
+    font-size: 13px;
+    line-height: 20px;
+    letter-spacing: 0.01em;
+  }
+  .text-label-md {
+    @apply font-sans font-medium;
+    font-size: 13px;
+    line-height: 18px;
+    letter-spacing: 0.02em;
+  }
+  .text-label-sm {
+    @apply font-sans font-medium;
+    font-size: 11px;
+    line-height: 16px;
+    letter-spacing: 0.04em;
+  }
+}

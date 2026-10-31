@@ -1,0 +1,166 @@
+<view class="page">
+  <block wx:if="{{needLogin}}">
+    <view class="card empty">
+      <view class="text-muted">登录后查看个人信息、书架与会员状态</view>
+      <button class="btn btn-primary" style="margin-top: 24rpx" bindtap="goLogin">
+        微信一键登录
+      </button>
+    </view>
+  </block>
+
+  <block wx:else>
+    <!-- 个人信息 -->
+    <view class="card">
+      <view class="row">
+        <image
+          wx:if="{{user.avatarUrl}}"
+          class="avatar-lg"
+          src="{{user.avatarUrl}}"
+          mode="aspectFill"
+        ></image>
+        <view wx:else class="avatar-lg avatar-fallback">{{user.avatarText}}</view>
+        <view class="flex-1" style="margin-left: 20rpx">
+          <view class="title-md">{{user.nickname}}</view>
+          <view class="text-muted text-sm" style="margin-top: 6rpx">
+            {{user.phone || '未绑定手机号'}}
+          </view>
+          <view class="tag {{member.isMember ? 'tag-pine' : ''}}" style="margin-top: 12rpx">
+            {{member.isMember ? '会员' : '书友'}}
+          </view>
+        </view>
+      </view>
+      <view class="divider"></view>
+      <view class="row">
+        <view class="stat flex-1">
+          <view class="stat-num">{{user.bookCount || 0}}</view>
+          <view class="stat-label">书籍</view>
+        </view>
+        <view class="stat flex-1">
+          <view class="stat-num">{{user.reviewCount || 0}}</view>
+          <view class="stat-label">书评</view>
+        </view>
+        <view class="stat flex-1">
+          <view class="stat-num">{{user.postCount || 0}}</view>
+          <view class="stat-label">动态</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 书架概览 -->
+    <view class="card">
+      <view class="row-between">
+        <view class="title-sm">我的书架</view>
+        <view class="text-muted text-sm" data-path="/bookshelf" bindtap="onGoWeb">
+          查看 ›
+        </view>
+      </view>
+      <view class="row" style="margin-top: 20rpx">
+        <view class="stat flex-1" data-path="/bookshelf" bindtap="onGoWeb">
+          <view class="stat-num">{{shelf.want}}</view>
+          <view class="stat-label">想读</view>
+        </view>
+        <view class="stat flex-1" data-path="/bookshelf" bindtap="onGoWeb">
+          <view class="stat-num">{{shelf.reading}}</view>
+          <view class="stat-label">在读</view>
+        </view>
+        <view class="stat flex-1" data-path="/bookshelf" bindtap="onGoWeb">
+          <view class="stat-num">{{shelf.read}}</view>
+          <view class="stat-label">已读</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 徽章 -->
+    <view class="card">
+      <view class="row-between">
+        <view class="title-sm">我的徽章</view>
+        <view class="text-muted text-sm">已解锁 {{badgeCount}}</view>
+      </view>
+      <view class="badge-row" wx:if="{{badges.length}}">
+        <view class="badge" wx:for="{{badges}}" wx:key="id">
+          <image
+            wx:if="{{item.iconUrl}}"
+            class="badge-icon"
+            src="{{item.iconUrl}}"
+            mode="aspectFit"
+          ></image>
+          <view wx:else class="badge-icon badge-icon-fallback">{{item.name}}</view>
+          <view class="text-faint text-xs" style="margin-top: 8rpx; text-align: center">
+            {{item.name}}
+          </view>
+        </view>
+      </view>
+      <view class="empty text-muted text-sm" wx:else>还没有解锁徽章，去阅读吧</view>
+    </view>
+
+    <!-- 会员状态 -->
+    <view class="card">
+      <view class="row-between">
+        <view class="title-sm">会员状态</view>
+        <view class="tag {{member.isMember ? 'tag-pine' : ''}}">
+          {{member.isMember ? '会员' : '未开通'}}
+        </view>
+      </view>
+      <view class="text-muted text-sm" style="margin-top: 8rpx" wx:if="{{member.isMember}}">
+        {{member.planName}} · 有效期至 {{member.expireText}}
+      </view>
+      <view class="text-muted text-sm" style="margin-top: 8rpx" wx:else>
+        开通会员可导出时脉、解锁专属权益
+      </view>
+      <button
+        class="btn btn-ghost btn-block"
+        style="margin-top: 24rpx"
+        data-path="/membership"
+        bindtap="onGoWeb"
+      >
+        {{member.isMember ? '续费 / 查看权益' : '去 Web 开通会员'}}
+      </button>
+    </view>
+
+    <!-- 设置 -->
+    <view class="card">
+      <view class="title-sm" style="margin-bottom: 8rpx">设置</view>
+      <view class="setting-item row-between" data-path="/privacy" bindtap="onGoWeb">
+        <text class="text-secondary">隐私政策</text>
+        <text class="text-faint">›</text>
+      </view>
+      <view class="setting-item row-between" data-path="/terms" bindtap="onGoWeb">
+        <text class="text-secondary">用户协议</text>
+        <text class="text-faint">›</text>
+      </view>
+      <view class="setting-item row-between" data-path="/feedback" bindtap="onGoWeb">
+        <text class="text-secondary">意见反馈</text>
+        <text class="text-faint">›</text>
+      </view>
+      <view class="setting-item row-between" data-path="/help" bindtap="onGoWeb">
+        <text class="text-secondary">帮助中心</text>
+        <text class="text-faint">›</text>
+      </view>
+      <view class="setting-item row-between" data-path="/about" bindtap="onGoWeb">
+        <text class="text-secondary">关于我们</text>
+        <text class="text-faint">›</text>
+      </view>
+      <view class="setting-item row-between" bindtap="onClearCache">
+        <text class="text-secondary">清除缓存</text>
+        <text class="text-faint">›</text>
+      </view>
+      <button
+        class="btn btn-ghost btn-block"
+        style="margin-top: 24rpx"
+        bindtap="onLogout"
+        disabled="{{loggingOut}}"
+      >
+        退出登录
+      </button>
+    </view>
+
+    <view class="text-faint text-xs" style="text-align: center; margin-top: 8rpx">
+      {{appName}} 小程序 v{{version}}
+    </view>
+
+    <view class="card empty" wx:if="{{error}}">
+      <view>{{error}}</view>
+      <view class="empty-action" bindtap="load">重试</view>
+    </view>
+  </block>
+</view>

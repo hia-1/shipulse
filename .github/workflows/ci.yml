@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend（类型检查 + 构建）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: 安装依赖
+        run: npm ci
+      - name: 类型检查（tsc --noEmit）
+        run: npx tsc --noEmit -p tsconfig.json
+      - name: 构建（nest build）
+        run: npm run build
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-dist
+          path: backend/dist
+          retention-days: 7
+
+  web-user:
+    name: Web 用户端（构建）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web-user
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: web-user/package-lock.json
+      - name: 安装依赖
+        run: npm ci
+      - name: 类型检查 + 构建（vue-tsc + vite build）
+        run: npm run build
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-user-dist
+          path: web-user/dist
+          retention-days: 7
+
+  web-admin:
+    name: Web 管理端（构建）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web-admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: web-admin/package-lock.json
+      - name: 安装依赖
+        run: npm ci
+      - name: 类型检查 + 构建（vue-tsc + vite build）
+        run: npm run build
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-admin-dist
+          path: web-admin/dist
+          retention-days: 7
+
+  security-audit:
+    name: 依赖安全扫描（生产依赖高危阻断）
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: [backend, web-user, web-admin]
+    defaults:
+      run:
+        working-directory: ${{ matrix.dir }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 安装依赖（用于生成完整依赖树）
+        run: npm ci
+      - name: npm audit（生产依赖，高危即失败）
+        run: npm audit --omit=dev --audit-level=high

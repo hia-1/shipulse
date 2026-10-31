@@ -1,0 +1,133 @@
+name: Deploy
+
+# 三环境部署（dev / test / prod）
+# - 手动触发：Actions → Deploy → Run workflow → 选择 environment
+# - 打 tag（v*）自动部署生产
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: '部署目标环境'
+        required: true
+        default: 'dev'
+        type: choice
+        options: [dev, test, prod]
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: deploy-${{ github.event.inputs.environment || 'prod' }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/backend
+
+jobs:
+  # ---- 构建并推送后端镜像 + 前端产物 ----
+  build:
+    name: 构建镜像与前端产物
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 计算镜像标签（commit sha）
+        id: meta
+        run: echo "tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+      - name: 登录容器镜像仓库
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 构建并推送后端镜像
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: 构建用户端 Web
+        working-directory: web-user
+        run: npm ci && npm run build
+
+      - name: 构建管理端 Web
+        working-directory: web-admin
+        run: npm ci && npm run build
+
+      - name: 打包前端产物
+        run: |
+          tar -czf web-dist.tar.gz web-user/dist web-admin/dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: web-dist.tar.gz
+          retention-days: 7
+
+  # ---- 部署到目标环境 ----
+  deploy:
+    name: 部署到 ${{ github.event.inputs.environment || 'prod' }}
+    needs: build
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'prod' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 下发前端产物
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+
+      - name: 准备 SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: 同步发布物到服务器
+        run: |
+          scp web-dist.tar.gz docker-compose.yml \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/"
+
+      - name: 远端拉取镜像并重启（滚动）
+        env:
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+        run: |
+          ssh "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" bash -s <<EOF
+          set -euo pipefail
+          cd "${{ secrets.DEPLOY_PATH }}"
+          tar -xzf web-dist.tar.gz
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login ${{ env.REGISTRY }} -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+          export BACKEND_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${IMAGE_TAG}"
+          docker compose -f docker-compose.yml --env-file .env.prod pull backend || true
+          docker compose -f docker-compose.yml --env-file .env.prod up -d --no-deps backend nginx
+          EOF
+
+      - name: 部署后健康检查
+        run: |
+          for i in $(seq 1 12); do
+            if curl -fsS --max-time 5 "${{ secrets.HEALTH_URL }}" >/dev/null; then
+              echo "健康检查通过"; exit 0
+            fi
+            echo "等待服务就绪（$i/12）…"; sleep 5
+          done
+          echo "健康检查失败"; exit 1
+
+      - name: 失败告警（企业微信）
+        if: failure()
+        run: |
+          curl -sS -X POST -H 'Content-Type: application/json' \
+            -d "{\"msgtype\":\"text\",\"text\":{\"content\":\"【时脉书社】部署失败：${{ github.repository }} @ ${{ github.event.inputs.environment || 'prod' }} (${GITHUB_SHA::7})\"}}" \
+            "${{ secrets.ALERT_WEBHOOK }}" || true

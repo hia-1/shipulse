@@ -1,0 +1,112 @@
+<view class="page">
+  <block wx:if="{{needLogin}}">
+    <view class="card empty">
+      <view class="text-muted">登录后查看消息通知</view>
+      <button class="btn btn-primary" style="margin-top: 24rpx" bindtap="goLogin">
+        去登录
+      </button>
+    </view>
+  </block>
+
+  <block wx:else>
+    <!-- 分类 Tab -->
+    <view class="msg-tabs">
+      <view
+        wx:for="{{tabs}}"
+        wx:key="key"
+        class="msg-tab {{activeTab === item.key ? 'msg-tab-active' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onSwitchTab"
+      >
+        <text>{{item.label}}</text>
+        <text wx:if="{{unread[item.key]}}" class="msg-tab-badge">{{unread[item.key]}}</text>
+      </view>
+    </view>
+
+    <view class="row-between" style="margin: 8rpx 4rpx 16rpx">
+      <view class="text-muted text-sm">共 {{total}} 条</view>
+      <view class="text-pine text-sm" bindtap="onMarkAllRead">
+        {{marking ? '处理中…' : '全部已读'}}
+      </view>
+    </view>
+
+    <view class="card empty" wx:if="{{loading}}">加载中…</view>
+    <block wx:elif="{{list.length}}">
+      <view class="card card-tight">
+        <block wx:for="{{list}}" wx:key="id">
+          <view
+            class="msg-item"
+            data-id="{{item.id}}"
+            data-index="{{index}}"
+            bindtap="onTapItem"
+          >
+            <view class="msg-dot {{item.isRead ? 'msg-dot-read' : ''}}"></view>
+            <view class="flex-1">
+              <view class="row-between">
+                <view class="title-sm flex-1">{{item.title}}</view>
+                <view class="text-faint text-xs" style="margin-left: 12rpx">
+                  {{item.timeText}}
+                </view>
+              </view>
+              <view class="text-muted text-sm" style="margin-top: 6rpx">
+                {{item.content}}
+              </view>
+              <view
+                wx:if="{{item.sender}}"
+                class="text-faint text-xs"
+                style="margin-top: 6rpx"
+              >
+                来自 {{item.sender.nickname}}
+              </view>
+            </view>
+          </view>
+          <view class="divider" wx:if="{{index < list.length - 1}}"></view>
+        </block>
+      </view>
+      <view class="empty text-muted text-sm" wx:if="{{loadingMore}}">加载更多…</view>
+      <view class="empty text-faint text-xs" wx:elif="{{!hasMore}}">没有更多了</view>
+    </block>
+    <view class="card empty" wx:else>暂无消息</view>
+
+    <!-- 订阅消息授权管理 -->
+    <view class="card">
+      <view class="row-between">
+        <view class="title-sm">阅读提醒</view>
+        <view class="tag {{hasAuthorized ? 'tag-pine' : ''}}">
+          {{hasAuthorized ? '已开启' : '未开启'}}
+        </view>
+      </view>
+      <view class="text-muted text-sm" style="margin-top: 8rpx">
+        开启后可接收阅读提醒与打卡提醒（微信订阅消息）
+      </view>
+      <block wx:for="{{templates}}" wx:key="id">
+        <view class="row-between" style="margin-top: 16rpx">
+          <view class="text-secondary text-sm">{{item.title}}</view>
+          <view class="text-faint text-xs">
+            {{item.authorized ? '已授权 ' + item.remaining + ' 次' : item.scene}}
+          </view>
+        </view>
+      </block>
+      <button
+        class="btn btn-ghost btn-block"
+        style="margin-top: 24rpx"
+        bindtap="onSubscribe"
+        disabled="{{subscribing || !templates.length}}"
+      >
+        {{hasAuthorized ? '继续授权' : '开启阅读提醒'}}
+      </button>
+      <view
+        wx:if="{{subscribeMock}}"
+        class="text-faint text-xs"
+        style="margin-top: 12rpx; text-align: center"
+      >
+        开发环境：订阅消息为模拟下发
+      </view>
+    </view>
+
+    <view class="card empty" wx:if="{{error}}">
+      <view>{{error}}</view>
+      <view class="empty-action" bindtap="reload">重试</view>
+    </view>
+  </block>
+</view>

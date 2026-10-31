@@ -1,0 +1,22 @@
+.hero {
+  padding: 20rpx 4rpx 28rpx;
+}
+
+.avatar {
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 50%;
+  background: #eef1ef;
+  flex-shrink: 0;
+}
+
+.avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2c4a42;
+  font-size: 24rpx;
+  font-weight: 500;
+  overflow: hidden;
+  white-space: nowrap;
+}

@@ -1,0 +1,111 @@
+<view class="page">
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <input
+      class="search-input"
+      value="{{keyword}}"
+      placeholder="书名 / 作者 / ISBN"
+      placeholder-class="search-placeholder"
+      confirm-type="search"
+      bindinput="onInput"
+      bindconfirm="doSearch"
+    />
+    <text wx:if="{{keyword}}" class="text-muted text-sm" bindtap="onClear">清空</text>
+    <view class="search-btn" bindtap="doSearch">搜索</view>
+  </view>
+
+  <!-- 搜索历史 -->
+  <view wx:if="{{!searched && history.length}}" class="card" style="margin-top: 28rpx">
+    <view class="row-between">
+      <view class="title-sm">搜索历史</view>
+      <view class="text-muted text-xs" bindtap="onClearHistory">清空</view>
+    </view>
+    <view class="hot-wrap">
+      <view
+        wx:for="{{history}}"
+        wx:key="*this"
+        class="chip"
+        data-kw="{{item}}"
+        bindtap="onHotTap"
+      >
+        {{item}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 热搜词 -->
+  <view wx:if="{{!searched && hot.length}}" class="card" style="margin-top: 28rpx">
+    <view class="title-sm">热门搜索</view>
+    <view class="hot-wrap">
+      <view
+        wx:for="{{hot}}"
+        wx:key="keyword"
+        class="chip"
+        data-kw="{{item.keyword}}"
+        bindtap="onHotTap"
+      >
+        {{item.keyword}}
+      </view>
+    </view>
+  </view>
+
+  <!-- ISBN 精确命中 -->
+  <view
+    wx:if="{{isbnHit}}"
+    class="card isbn-hit"
+    data-id="{{isbnHit.id}}"
+    bindtap="goBook"
+  >
+    <view class="text-xs text-gold">ISBN 精确命中</view>
+    <view class="row" style="margin-top: 16rpx">
+      <image
+        wx:if="{{!isbnCoverFailed}}"
+        class="book-cover"
+        src="{{isbnHit.coverUrl}}"
+        mode="aspectFill"
+        binderror="onIsbnCoverError"
+      ></image>
+      <view wx:else class="book-cover cover-fallback">{{isbnHit.title}}</view>
+      <view class="book-info">
+        <view class="book-title">{{isbnHit.title}}</view>
+        <view class="book-sub">{{isbnHit.author}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 搜索结果 -->
+  <view class="card empty" wx:if="{{searching}}">搜索中…</view>
+  <block wx:elif="{{suggestBooks.length}}">
+    <view class="card">
+      <block wx:for="{{suggestBooks}}" wx:key="id">
+        <view class="book-item" data-id="{{item.id}}" bindtap="goBook">
+          <image
+            wx:if="{{!item.coverFailed}}"
+            class="book-cover"
+            src="{{item.coverUrl}}"
+            mode="aspectFill"
+            data-index="{{index}}"
+            binderror="onResultCoverError"
+          ></image>
+          <view wx:else class="book-cover cover-fallback">{{item.coverText}}</view>
+          <view class="book-info">
+            <view class="book-title">{{item.title}}</view>
+            <view class="book-sub">{{item.author}} · {{item.publisher}}</view>
+            <view class="text-xs text-gold" style="margin-top: 8rpx">
+              评分 {{item.ratingText}}
+            </view>
+          </view>
+        </view>
+        <view class="divider" wx:if="{{index < suggestBooks.length - 1}}"></view>
+      </block>
+    </view>
+  </block>
+  <view class="card empty" wx:elif="{{searched && !error}}">
+    没有找到相关书籍，换个关键词试试
+  </view>
+
+  <view class="card empty" wx:if="{{error}}">
+    <view>{{error}}</view>
+    <view class="empty-action" bindtap="doSearch">重试</view>
+  </view>
+</view>

@@ -1,0 +1,105 @@
+name: Pages 静态预览
+
+# 用 demo 数据模式构建两个前端并发布到 GitHub Pages：
+#   https://<owner>.github.io/<repo>/user/   用户端
+#   https://<owner>.github.io/<repo>/admin/  管理端
+# 预览不依赖后端，接口数据由前端内置的 demo 适配器提供。
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 构建静态预览
+    runs-on: ubuntu-latest
+    env:
+      REPO_NAME: ${{ github.event.repository.name || 'shipulse' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 安装依赖（用户端）
+        working-directory: web-user
+        run: npm ci
+
+      - name: 构建用户端（demo 模式）
+        working-directory: web-user
+        run: VITE_DEMO=1 VITE_BASE_URL="/$REPO_NAME/user/" npm run build
+
+      - name: 安装依赖（管理端）
+        working-directory: web-admin
+        run: npm ci
+
+      - name: 构建管理端（demo 模式）
+        working-directory: web-admin
+        run: VITE_DEMO=1 VITE_BASE_URL="/$REPO_NAME/admin/" npm run build
+
+      - name: 组装站点
+        run: |
+          mkdir -p _site
+          cp -r web-user/dist _site/user
+          cp -r web-admin/dist _site/admin
+          cat > _site/index.html <<'HTML'
+          <!doctype html>
+          <html lang="zh-CN">
+            <head>
+              <meta charset="utf-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <title>时脉书社 · 静态界面预览</title>
+              <style>
+                :root { color-scheme: light; }
+                body { margin: 0; min-height: 100vh; display: grid; place-items: center;
+                       font-family: "Noto Serif SC", "Songti SC", serif;
+                       background: linear-gradient(160deg, #f7f3ec 0%, #ece3d4 100%); color: #2b2b2b; }
+                main { max-width: 640px; padding: 48px 32px; text-align: center; }
+                h1 { font-size: 32px; letter-spacing: .12em; margin: 0 0 12px; }
+                p { color: #6b6257; line-height: 1.9; margin: 0 0 32px; }
+                .links { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+                a { display: block; padding: 14px 28px; border-radius: 999px; text-decoration: none;
+                    color: #fff; background: #3f5a4a; letter-spacing: .08em; }
+                a.secondary { background: #8a6a3f; }
+                small { display: block; margin-top: 28px; color: #9a9084; }
+              </style>
+            </head>
+            <body>
+              <main>
+                <h1>时脉书社 · 阅读世界</h1>
+                <p>这是用于展示界面与交互的静态预览版本，数据来自前端内置演示数据，不连接后端服务。</p>
+                <div class="links">
+                  <a href="./user/">用户端 Web</a>
+                  <a class="secondary" href="./admin/">管理端 Web</a>
+                </div>
+                <small>完整功能需按 README 在本地启动后端与数据库</small>
+              </main>
+            </body>
+          </html>
+          HTML
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: 发布到 GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

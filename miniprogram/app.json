@@ -1,0 +1,53 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/pulse/pulse",
+    "pages/messages/messages",
+    "pages/profile/profile",
+    "pages/search/search",
+    "pages/book/book",
+    "pages/reading/reading"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "navigationBarTitleText": "时脉书社",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F6F7F6",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#8A918D",
+    "selectedColor": "#2C4A42",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "images/tabbar/home.png",
+        "selectedIconPath": "images/tabbar/home-active.png"
+      },
+      {
+        "pagePath": "pages/pulse/pulse",
+        "text": "时脉",
+        "iconPath": "images/tabbar/pulse.png",
+        "selectedIconPath": "images/tabbar/pulse-active.png"
+      },
+      {
+        "pagePath": "pages/messages/messages",
+        "text": "消息",
+        "iconPath": "images/tabbar/messages.png",
+        "selectedIconPath": "images/tabbar/messages-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "images/tabbar/profile.png",
+        "selectedIconPath": "images/tabbar/profile-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}
